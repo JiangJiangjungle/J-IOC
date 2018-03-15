@@ -1,4 +1,4 @@
-package com.scut.jsj;
+package com.scut.jsj.conf;
 
 import com.scut.jsj.conf.Bean;
 import com.scut.jsj.conf.resolve.ConfigurationManager;
