@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+    <bean id="user" class="com.scut.jsj.bean.User" scope="prototype">
+        <property name="name" value="猪猪侠"/>
+        <property name="age" value="18"/>
+        <property name="pet" ref="pet"/>
+    </bean>
+
+    <bean id="pet" class="com.scut.jsj.bean.Pet">
+        <property name="name" value="狗拉拉"/>
+        <property name="type" value="dog"/>
+    </bean>
+</beans>
