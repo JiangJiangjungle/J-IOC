@@ -27,6 +27,16 @@ public class BeanUtil {
                 field.set(targetObject, Integer.parseInt(feildValue));
             } else if (type == double.class || type == Double.class) {
                 field.set(targetObject, Double.parseDouble(feildValue));
+            } else if (type == boolean.class || type == Boolean.class) {
+                field.set(targetObject, Boolean.parseBoolean(feildValue));
+            } else if (type == float.class || type == Float.class) {
+                field.set(targetObject, Float.parseFloat(feildValue));
+            } else if (type == long.class || type == Long.class) {
+                field.set(targetObject, Long.parseLong(feildValue));
+            } else if (type == short.class || type == Short.class) {
+                field.set(targetObject, Short.parseShort(feildValue));
+            } else if (type == char.class || type == Character.class) {
+                field.set(targetObject, feildValue.charAt(0));
             } else {
                 field.set(targetObject, feildValue);
             }
