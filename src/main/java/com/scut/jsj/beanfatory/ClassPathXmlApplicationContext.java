@@ -1,22 +1,23 @@
 package com.scut.jsj.beanfatory;
 
-import com.scut.jsj.conf.Bean;
-import com.scut.jsj.conf.Property;
-import com.scut.jsj.conf.resolve.ConfigurationManager;
+import com.scut.jsj.carrier.BeanDefinition;
+import com.scut.jsj.carrier.PropertyValue;
+import com.scut.jsj.io.ClassPathResource;
+import com.scut.jsj.resolve.BeanDefinitionReader;
 import com.scut.jsj.util.BeanUtil;
 import lombok.Data;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 public class ClassPathXmlApplicationContext implements BeanFactory {
 
     //存放配置文件信息
-    private Map<String, Bean> config;
+    private Map<String, BeanDefinition> config;
     //存放需要new的单例bean对象的容器
     private Map<String, Object> context = new HashMap<>();
+    //依赖注入完毕的对象名单
+    private Set<String> idSet = new HashSet<>();
 
     /**
      * 将配置文件中设置为单例的对象创建出来并放入容器中
@@ -24,147 +25,155 @@ public class ClassPathXmlApplicationContext implements BeanFactory {
      * @param path
      */
     public ClassPathXmlApplicationContext(String path) {
-        if (path == null || !path.endsWith(".xml")) {
-            throw new RuntimeException("配置文件PATH不合法！");
-        }
+        //获得Resource对象
+        ClassPathResource resource = new ClassPathResource(path);
         //读取配置文件中的bean节点信息
-        config = ConfigurationManager.getBeanConfig(path);
+        config = BeanDefinitionReader.loadBeanDefinitions(resource);
         //根据配置文件创建单例对象
-        createBeansAndSetValueAndReference(config);
-    }
-
-    /**
-     * 根据配置文件创建所有单例对象
-     *
-     * @param config
-     */
-    private void createBeansAndSetValueAndReference(Map<String, Bean> config) {
-        if (config == null) {
-            return;
-        }
-        //遍历初始化bean
-        String name;
-        Bean beanConfig;
-        Object object;
-        //先创建默认对象并对字段赋值（不包括引用）
-        for (Map.Entry<String, Bean> entry : config.entrySet()) {
-            name = entry.getKey();
-            beanConfig = entry.getValue();
-            //如果scope是SINGLETON，就创建单例对象并存入context容器中
-            if (beanConfig.getScope().equals(Bean.SINGLETON)) {
-                //创建对象
-                object = createBeanAndSetValue(beanConfig);
-                //存入context容器
-                context.put(name, object);
-            }
-        }
-        //对引用字段赋值
-        for (Map.Entry<String, Bean> entry : config.entrySet()) {
-            name = entry.getKey();
-            beanConfig = entry.getValue();
-            //如果scope是SINGLETON，就对引用字段赋值并存入context容器中
-            if (beanConfig.getScope().equals(Bean.SINGLETON)) {
-                //设置引用字段
-                object = linkBeanReference(context.get(name), beanConfig);
-                //重新存入context容器
-                context.put(name, object);
-            }
-        }
+        createBeans(config);
     }
 
     /**
      * 根据配置对bean的引用字段进行赋值
      *
-     * @param object
-     * @param beanConfig
+     * @param target
+     * @param beanDefinition
      * @return
      */
-    private Object linkBeanReference(Object object, Bean beanConfig) {
+    private Object linkBeanReference(Object target, BeanDefinition beanDefinition) {
+        //引用字段名称
+        String fieldName;
+        //字段所引用的对象在配置文件中的beanID
+        String beanID;
+        //根据beanID获取该对象
+        Object referenceObject;
+        //引用对象的配置信息
+        BeanDefinition refBeanDefinition;
         try {
             //获取bean节点中各property配置
-            List<Property> properties = beanConfig.getProperties();
-            //引用字段名称
-            String fieldName;
-            //字段所引用的对象在配置文件中的beanID
-            String beanID;
-            //根据beanID获取该对象
-            Object referenceObject;
-            //引用对象的配置信息
-            Bean refBean;
+            List<PropertyValue> properties = beanDefinition.getProperties();
             //进行遍历，查找并设置引用字段
-            for (Property property : properties) {
-                fieldName = property.getName();
-                beanID = property.getRef();
-                if (beanID != null) {
-                    refBean = config.get(beanID);
-                    if (refBean.getScope().equals(Bean.SINGLETON)) {
-                        referenceObject = context.get(beanID);
-                    } else {
-                        referenceObject = this.createBeanAndSetValue(refBean);
-                        referenceObject = this.linkBeanReference(referenceObject, refBean);
+            for (PropertyValue propertyValue : properties) {
+                if (propertyValue.isReference()) {
+                    fieldName = propertyValue.getName();
+                    beanID = propertyValue.getValue();
+                    if (beanID != null) {
+                        refBeanDefinition = config.get(beanID);
+                        if (refBeanDefinition.getScope().equals(BeanDefinition.SINGLETON)) {
+                            referenceObject = context.get(beanID);
+                        } else {
+                            referenceObject = this.createBean(refBeanDefinition);
+                            referenceObject = this.linkBeanReference(referenceObject, refBeanDefinition);
+                        }
+                        BeanUtil.setField(target, fieldName, referenceObject);
                     }
-                    BeanUtil.setField(object, fieldName, referenceObject);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("对" + beanConfig.getClassName() + "设置引用字段失败！");
+            throw new RuntimeException("对" + beanDefinition.getClassName() + "设置引用字段失败！");
         }
-        return object;
-
+        return target;
     }
 
     /**
-     * 根据配置文件中bean节点信息创建单例对象，并且对字段赋值（不包括引用）
+     * 根据配置文件中bean节点信息对字段赋值（不包括引用）
      *
-     * @param beanConfig
+     * @param beanDefinition
      * @return
      */
-    private Object createBeanAndSetValue(Bean beanConfig) {
-        //根据bean节点信息创建bean对象
-        Class clazz = null;
-        Object object = null;
+    private Object injectValue(Object target, BeanDefinition beanDefinition) {
         try {
-            //获得Class对象
-            clazz = Class.forName(beanConfig.getClassName());
-            //创建bean默认构造器对象
-            object = clazz.newInstance();
             //获取bean节点中各property配置
-            List<Property> properties = beanConfig.getProperties();
+            List<PropertyValue> properties = beanDefinition.getProperties();
             //字段名称
             String fieldName;
             //字段值
             String fieldValue;
             //进行遍历，设置各个字段值
-            for (Property property : properties) {
-                fieldName = property.getName();
-                fieldValue = property.getValue();
-                if (fieldValue != null) {
-                    BeanUtil.setField(object, fieldName, fieldValue);
+            for (PropertyValue propertyValue : properties) {
+                if (!propertyValue.isReference()) {
+                    fieldName = propertyValue.getName();
+                    fieldValue = propertyValue.getValue();
+                    if (fieldValue != null) {
+                        BeanUtil.setField(target, fieldName, fieldValue);
+                    }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("创建" + beanConfig.getClassName() + "对象并设置字段值失败！");
+            throw new RuntimeException(beanDefinition.getClassName() + "设置字段值失败！");
         }
+        return target;
+    }
 
+    /**
+     * 利用反射机制，以默认构造器形式创建所有单例对象,存入context容器
+     *
+     * @param config
+     */
+    private void createBeans(Map<String, BeanDefinition> config) {
+        //创建bean对象
+        Object object;
+        BeanDefinition beanDefinition = null;
+        String beanID;
+        try {
+            for (Map.Entry<String, BeanDefinition> entry : config.entrySet()) {
+                beanID = entry.getKey();
+                beanDefinition = entry.getValue();
+                if (beanDefinition.getScope().equals(BeanDefinition.SINGLETON)) {
+                    object = createBean(beanDefinition);
+                    //存入context容器
+                    context.put(beanID, object);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (beanDefinition != null) {
+                throw new RuntimeException("创建" + beanDefinition.getClassName() + "对象失败！");
+            } else {
+                throw new RuntimeException("调用createBeans()方法创建对象失败！");
+            }
+        }
+    }
+
+    /**
+     * 创建一个对象
+     *
+     * @param beanDefinition
+     * @return
+     */
+    private Object createBean(BeanDefinition beanDefinition) {
+        Object object;
+        try {
+            Class clazz = Class.forName(beanDefinition.getClassName());
+            //创建bean默认构造器对象
+            object = clazz.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("创建" + beanDefinition.getClassName() + "对象失败！");
+        }
         return object;
     }
 
     @Override
     public Object getBean(String name) {
-        Bean beanConfig = config.get(name);
-        if (beanConfig == null) {
+        Object result;
+        BeanDefinition beanDefinition = config.get(name);
+        if (beanDefinition == null) {
             throw new RuntimeException("xml配置文件中没有 bean: " + name + " 的配置信息");
         }
-        switch (beanConfig.getScope()) {
-            case Bean.SINGLETON:
-                return context.get(name);
-            case Bean.PROTOTYPE:
-                Object object = this.createBeanAndSetValue(beanConfig);
-                return this.linkBeanReference(object, beanConfig);
-            default:
-                return null;
+        String beanID = beanDefinition.getId();
+        if (beanDefinition.getScope().equals(BeanDefinition.SINGLETON)) {
+            result = context.get(beanID);
+            if (idSet.contains(beanID)) {
+                return result;
+            }
+            idSet.add(beanID);
+        } else {
+            result = createBean(beanDefinition);
         }
+        result = injectValue(result, beanDefinition);
+        return linkBeanReference(result, beanDefinition);
     }
 }

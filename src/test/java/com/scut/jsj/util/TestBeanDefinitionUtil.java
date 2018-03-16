@@ -4,7 +4,7 @@ import com.scut.jsj.bean.Pet;
 import com.scut.jsj.bean.User;
 import org.junit.Test;
 
-public class TestBeanUtil {
+public class TestBeanDefinitionUtil {
 
     @Test
     public void testSetField() {

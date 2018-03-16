@@ -2,6 +2,9 @@ package com.scut.jsj.util;
 
 import java.lang.reflect.Field;
 
+/**
+ * bean属性注入的工具类
+ */
 public class BeanUtil {
 
     /**
@@ -12,7 +15,6 @@ public class BeanUtil {
      * @param feildValue   字段值
      */
     public static void setField(Object targetObject, String feildName, String feildValue) {
-
         try {
             //获得对应字段
             Field field = targetObject.getClass().getDeclaredField(feildName);
@@ -42,17 +44,12 @@ public class BeanUtil {
      * @param feildValue   字段引用
      */
     public static void setField(Object targetObject, String feildName, Object feildValue) {
-
         try {
             //获得对应字段
             Field field = targetObject.getClass().getDeclaredField(feildName);
             //释放权限，设为可见
             field.setAccessible(true);
-            //获取字段类型
-            Class type = field.getType();
-
             field.set(targetObject, feildValue);
-
         } catch (Exception e) {
             throw new RuntimeException(targetObject.getClass().getName() + "类实例对象，设置字段:" + feildName + "失败！");
         }

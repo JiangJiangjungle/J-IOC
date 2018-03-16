@@ -1,14 +1,14 @@
-package com.scut.jsj.conf;
+package com.scut.jsj.carrier;
 
 import lombok.Data;
 
 import java.util.List;
 
 /**
- * 对应XML配置文件中bean标签的信息
+ * 对应XML配置文件中bean标签的信息载体
  */
 @Data
-public class Bean {
+public class BeanDefinition {
 
     public static final String SINGLETON = "singleton";
     public static final String PROTOTYPE = "prototype";
@@ -18,10 +18,11 @@ public class Bean {
     //默认bean是单例对象
     private String scope = SINGLETON;
 
-    private List<Property> properties;
+    private List<PropertyValue> properties;
 
-    public Bean(String id, String className) {
+    public BeanDefinition(String id, String className) {
         this.id = id;
         this.className = className;
     }
+
 }
