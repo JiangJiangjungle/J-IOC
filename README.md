@@ -15,15 +15,15 @@
 ## 类图
 
 ### Resource部分
-###ResourceLoader部分;
+### ResourceLoader部分;
 
-###BeanDefinition部分;
+### BeanDefinition部分;
 
-###BeanDefinitionReader部分;
+### BeanDefinitionReader部分;
 
-###BeanDefinitionReaderRegistry部分;
+### BeanDefinitionReaderRegistry部分;
 
-###BeanFactory部分;
+### BeanFactory部分;
 
 
 ## 核心代码
