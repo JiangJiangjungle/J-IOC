@@ -18,11 +18,11 @@
 ![Resource](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/Resource%20Diagram.png)
 ### ResourceLoader部分
 
-### BeanDefinition部分;
+### BeanDefinition部分
 
-### BeanDefinitionReader部分;
+### BeanDefinitionReader部分
 
-### BeanDefinitionReaderRegistry部分;
+### BeanDefinitionReaderRegistry部分
 
 ### BeanFactory部分;
 
