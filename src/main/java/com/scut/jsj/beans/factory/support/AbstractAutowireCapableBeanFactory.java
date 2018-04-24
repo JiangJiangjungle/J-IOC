@@ -4,7 +4,6 @@ package com.scut.jsj.beans.factory.support;
 import com.scut.jsj.beans.PropertyValue;
 import com.scut.jsj.beans.PropertyValues;
 import com.scut.jsj.beans.factory.AutowireCapableBeanFactory;
-import com.scut.jsj.beans.factory.BeanFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
 import com.scut.jsj.exception.BeanCreationException;
 import com.scut.jsj.exception.BeansException;
@@ -12,25 +11,12 @@ import com.scut.jsj.util.Assert;
 import com.scut.jsj.util.ObjectUtils;
 
 import java.lang.reflect.Modifier;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-//暂时导入spring的包
-
-/**
- *
- */
 public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory implements AutowireCapableBeanFactory {
 
-    private final Map<String, Object> factoryBeanInstanceCache;
 
     public AbstractAutowireCapableBeanFactory() {
-        this.factoryBeanInstanceCache = new ConcurrentHashMap<>(16);
-
-    }
-
-    public AbstractAutowireCapableBeanFactory(BeanFactory parentBeanFactory) {
-        this();
+        super();
     }
 
     /**
@@ -66,12 +52,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @throws BeanCreationException
      */
     protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, Object[] args) throws BeanCreationException {
-        Object exposedObject = null;
-        //先从factoryBeanInstanceCache找是否有创建好的factoryBean实例（暂不实现）
-        //若没有就创建一个bean默认构造实例
-        if (exposedObject == null) {
-            exposedObject = this.createBeanInstance(beanName, mbd, args);
-        }
+        //创建一个bean默认构造实例
+        Object exposedObject = this.createBeanInstance(beanName, mbd, args);
         try {
             //重点关注：此处对bean进行依赖注入
             this.populateBean(beanName, mbd, exposedObject);
@@ -82,14 +64,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             throw new BeanCreationException(mbd.getDescription(), beanName, "Initialization of bean failed", var18);
         }
         try {
-            //注册到已完成bean(分单例和多例)的缓存
-//            this.registerDisposableBeanIfNecessary(beanName, bean, mbd);
             //若是单例对象，将对象存入单例池
             if (mbd.isSingleton()) {
                 this.addSingleton(beanName, exposedObject);
             }
-            //若是多例对象，将对象
-
             return exposedObject;
         } catch (Exception var16) {
             throw new BeanCreationException(mbd.getDescription(), beanName, "Invalid destruction signature", var16);
@@ -105,9 +83,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @return
      */
     private Object initializeBean(String beanName, Object exposedObject, RootBeanDefinition mbd) throws BeansException {
-
-
         PropertyValues propertyValues = mbd.getPropertyValues();
+        //获得bean对应的class对象
         Class<?> beanClass = mbd.getBeanClass();
         //属性名称
         String propertyName;
@@ -138,7 +115,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @throws BeansException
      */
     private void populateBean(String beanName, RootBeanDefinition mbd, Object beanObject) throws BeansException {
-
         String[] dependencies = mbd.getDependsOn();
         Class<?> beanClass = mbd.getBeanClass();
         //依赖项名称
@@ -178,7 +154,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @throws BeanCreationException
      */
     protected Object createBeanInstance(String beanName, RootBeanDefinition mbd, Object[] args) throws BeanCreationException {
-
         // 确认需要创建Bean实例的类可以实例化(简化)
         Class<?> beanClass = mbd.getBeanClass();
         Assert.notNull(beanClass, "beanClass实例化对象时不允许为null！");

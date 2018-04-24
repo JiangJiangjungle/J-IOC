@@ -1,6 +1,8 @@
 package com.scut.jsj.beans;
 
 
+import org.springframework.util.StringUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,7 +38,7 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 
     public MutablePropertyValues addPropertyValue(PropertyValue pv) {
         for (int i = 0; i < this.propertyValueList.size(); ++i) {
-            PropertyValue currentPv = (PropertyValue) this.propertyValueList.get(i);
+            PropertyValue currentPv = this.propertyValueList.get(i);
             if (currentPv.getName().equals(pv.getName())) {
                 this.setPropertyValueAt(pv, i);
                 return this;
@@ -52,7 +54,7 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 
     @Override
     public PropertyValue[] getPropertyValues() {
-        return (PropertyValue[]) this.propertyValueList.toArray(new PropertyValue[this.propertyValueList.size()]);
+        return this.propertyValueList.toArray(new PropertyValue[this.propertyValueList.size()]);
     }
 
     @Override
@@ -97,6 +99,16 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return this.propertyValueList.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        PropertyValue[] pvs = this.getPropertyValues();
+        StringBuilder sb = (new StringBuilder("PropertyValues: length=")).append(pvs.length);
+        if (pvs.length > 0) {
+            sb.append("; ").append(StringUtils.arrayToDelimitedString(pvs, "; "));
+        }
+        return sb.toString();
     }
 }

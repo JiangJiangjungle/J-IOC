@@ -14,7 +14,6 @@ import java.util.Arrays;
  * BeanDefinition接口的模板实现（抽象）类
  */
 public abstract class AbstractBeanDefinition implements BeanDefinition {
-
     //bean的作用域
     private String scope = BeanDefinition.SCOPE_SINGLETON;
     //该bean的class对象

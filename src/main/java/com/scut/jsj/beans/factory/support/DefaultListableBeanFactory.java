@@ -29,10 +29,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public DefaultListableBeanFactory() {
     }
 
-    public DefaultListableBeanFactory(BeanFactory parentBeanFactory) {
-        super(parentBeanFactory);
-    }
-
     public boolean containsBeanDefinition(String beanName) {
         Assert.notNull(beanName, "Bean name must not be null");
         return this.beanDefinitionMap.containsKey(beanName);
@@ -42,9 +38,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
         Assert.hasText(beanName, "Bean name must not be empty");
         Assert.notNull(beanDefinition, "BeanDefinition must not be null");
-//        if (beanDefinition instanceof AbstractBeanDefinition) {
-//            throw new BeanDefinitionStoreException(beanDefinition.getResourceDescription(), beanName, "Validation of bean definition failed");
-//        }
         BeanDefinition oldBeanDefinition = this.beanDefinitionMap.get(beanName);
         if (oldBeanDefinition != null) {
             //验证 beanDefinition 与 oldBeanDefinition 是否相等

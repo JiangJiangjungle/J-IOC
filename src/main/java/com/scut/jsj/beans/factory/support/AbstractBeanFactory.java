@@ -1,8 +1,8 @@
 package com.scut.jsj.beans.factory.support;
 
 import com.scut.jsj.beans.factory.ObjectFactory;
-import com.scut.jsj.beans.factory.config.ConfigurableBeanFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
+import com.scut.jsj.beans.factory.config.ConfigurableBeanFactory;
 import com.scut.jsj.exception.*;
 import com.scut.jsj.util.Assert;
 import com.scut.jsj.util.StringUtils;
@@ -39,7 +39,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
             //此处省略了查找能够生成bean的工厂的步骤
             //查找对应的BeanDefinition
             final RootBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
-
             //获取依赖项
             String[] dependsOn = mbd.getDependsOn();
             String[] var11;
@@ -84,13 +83,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
                 Object prototypeInstance;
                 //创建多例的bean
                 prototypeInstance = this.createBean(beanName, mbd, args);
-//                try {
-////                    this.beforePrototypeCreation(beanName);
-//                    //创建多例的bean
-//                    prototypeInstance = this.createBean(beanName, mbd, args);
-//                } finally {
-////                    this.afterPrototypeCreation(beanName);
-//                }
                 //进行检查
                 bean = this.getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
             }
@@ -173,7 +165,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     }
 
     protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd) throws BeanDefinitionStoreException {
-        return this.getMergedBeanDefinition(beanName, bd, (BeanDefinition) null);
+        return this.getMergedBeanDefinition(beanName, bd,null);
     }
 
     protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd, BeanDefinition containingBd) throws BeanDefinitionStoreException {
@@ -182,7 +174,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
             if (containingBd == null) {
                 mbd = this.mergedBeanDefinitions.get(beanName);
             }
-
             if (mbd == null) {
                 if (bd.getParentName() == null) {
                     if (bd instanceof RootBeanDefinition) {
@@ -213,7 +204,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     @Override
     public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
         String beanName = this.transformedBeanName(name);
-        Object beanInstance = this.getSingleton(beanName, false);
+        Object beanInstance = this.getSingleton(beanName);
         if (beanInstance != null) {
             return true;
         } else {
@@ -235,7 +226,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     @Override
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
         String beanName = this.transformedBeanName(name);
-        Object beanInstance = this.getSingleton(beanName, false);
+        Object beanInstance = this.getSingleton(beanName);
         if (beanInstance != null) {
             return beanInstance.getClass();
         } else {

@@ -47,5 +47,4 @@ public interface BeanDefinition {
     PropertyValues getPropertyValues();
 
     String getResourceDescription();
-
 }

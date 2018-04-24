@@ -1,5 +1,7 @@
-package com.scut.jsj.beans.factory.support;
+package com.scut.jsj.beans.factory.xml;
 
+import com.scut.jsj.beans.factory.support.AbstractBeanDefinitionReader;
+import com.scut.jsj.beans.factory.support.BeanDefinitionRegistry;
 import com.scut.jsj.beans.factory.xml.XmlParser;
 import com.scut.jsj.core.io.Resource;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
@@ -19,10 +21,7 @@ import java.util.Set;
  * BeanDefinitionReader的真正实现类，继承了AbstractBeanDefinitionReader抽象类
  */
 public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
-
     protected final Log logger = LogFactory.getLog(this.getClass());
-    //用于暂时保存bean对应的Resource对象,利用ThreadLocal方式存于当前线程中
-    private ThreadLocal<Set<Resource>> resourcesCurrentlyBeingLoaded;
 
     public XmlBeanDefinitionReader(BeanDefinitionRegistry registry) {
         super(registry);
@@ -33,17 +32,6 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
         Assert.notNull(resource, "EncodedResource must not be null");
         //此处应该被日志记录
         logger.info("Loading XML bean definitions from " + resource.getDescription());
-//        Set<Resource> currentResources = this.resourcesCurrentlyBeingLoaded.get();
-//        //首次设置
-//        if (currentResources == null) {
-//            currentResources = new HashSet<>(4);
-//            this.resourcesCurrentlyBeingLoaded.set(currentResources);
-//        }
-//        //将需要被转换的Resource对象暂存入resourcesCurrentlyBeingLoaded的set中
-//        if (!currentResources.add(resource)) {
-//            throw new BeanDefinitionStoreException("Detected cyclic loading of " + resource
-//                    + " - check your import definitions!");
-//        }
         //如果存入set成功就执行doLoadBeanDefinitions(Resource iotest)：此处与spring的操作不同，做了简化，直接进入解析
         return doLoadBeanDefinitions(resource);
     }
