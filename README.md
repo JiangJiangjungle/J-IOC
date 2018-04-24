@@ -17,15 +17,15 @@
 ### Resource部分
 ![Resource](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/Resource%20Diagram.png)
 ### ResourceLoader部分
-
+![ResourceLoader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/ResourceLoader%20Diagram.png)
 ### BeanDefinition部分
-
+![BeanDefinition](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinition%20Diagram.png)
 ### BeanDefinitionReader部分
-
-### BeanDefinitionReaderRegistry部分
-
+![BeanDefinitionReader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinition%20Diagram.png)
+### BeanDefinitionRegistry部分
+![BeanDefinitionReader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinitionRegistry%20Diagram.png)
 ### BeanFactory部分;
-
+![BeanFactory](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanFactory%20Diagram.png)
 
 ## 核心代码
 
