@@ -1,7 +1,6 @@
 package com.scut.jsj.beans.factory.support;
 
 
-import com.scut.jsj.beans.factory.BeanFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
 import com.scut.jsj.exception.BeanDefinitionStoreException;
 import com.scut.jsj.exception.BeansException;
@@ -56,13 +55,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             this.beanDefinitionNames.add(beanName);
         }
         beanDefinition = this.beanDefinitionMap.get(beanName);
+        //若是RootBeanDefinition则同时存到AbstractBeanFactory的mergedBeanDefinition中去
         if (beanDefinition instanceof RootBeanDefinition) {
             this.setMergedBeanDefinition(beanName, (RootBeanDefinition) beanDefinition);
         }
-//        //若 oldBeanDefinition
-//        if (oldBeanDefinition != null || this.containsSingleton(beanName)) {
-//            this.resetBeanDefinition(beanName);
-//        }
     }
 
     protected void resetBeanDefinition(String beanName) {

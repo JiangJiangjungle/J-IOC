@@ -11,4 +11,7 @@
         <property name="age" value="18"/>
         <property name="person" ref="person"/>
     </bean>
+
+    <!--扫描包中的所有类-->
+    <package-scan package_name="com.scut.jsj.entity"/>
 </beans>

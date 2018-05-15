@@ -3,7 +3,6 @@ package com.scut.jsj.beans.factory.support;
 
 import com.scut.jsj.beans.PropertyValue;
 import com.scut.jsj.beans.PropertyValues;
-import com.scut.jsj.beans.factory.AutowireCapableBeanFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
 import com.scut.jsj.exception.BeanCreationException;
 import com.scut.jsj.exception.BeansException;
@@ -12,7 +11,7 @@ import com.scut.jsj.util.ObjectUtils;
 
 import java.lang.reflect.Modifier;
 
-public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory implements AutowireCapableBeanFactory {
+public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory{
 
 
     public AbstractAutowireCapableBeanFactory() {

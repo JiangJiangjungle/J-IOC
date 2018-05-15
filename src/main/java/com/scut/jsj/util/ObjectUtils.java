@@ -9,6 +9,10 @@ import java.util.Arrays;
 
 public class ObjectUtils {
 
+    public static boolean isEmpty(Object[] array) {
+        return array == null || array.length == 0;
+    }
+
     public static int nullSafeHashCode(Object obj) {
         if (obj == null) {
             return 0;
@@ -69,6 +73,35 @@ public class ObjectUtils {
         }
     }
 
+    public static String nullSafeToString(Object obj) {
+        if (obj == null) {
+            return "null";
+        } else if (obj instanceof String) {
+            return (String) obj;
+        } else if (obj instanceof Object[]) {
+            return nullSafeToString((Object[]) ((Object[]) obj));
+        } else if (obj instanceof boolean[]) {
+            return nullSafeToString((boolean[]) ((boolean[]) obj));
+        } else if (obj instanceof byte[]) {
+            return nullSafeToString((byte[]) ((byte[]) obj));
+        } else if (obj instanceof char[]) {
+            return nullSafeToString((char[]) ((char[]) obj));
+        } else if (obj instanceof double[]) {
+            return nullSafeToString((double[]) ((double[]) obj));
+        } else if (obj instanceof float[]) {
+            return nullSafeToString((float[]) ((float[]) obj));
+        } else if (obj instanceof int[]) {
+            return nullSafeToString((int[]) ((int[]) obj));
+        } else if (obj instanceof long[]) {
+            return nullSafeToString((long[]) ((long[]) obj));
+        } else if (obj instanceof short[]) {
+            return nullSafeToString((short[]) ((short[]) obj));
+        } else {
+            String str = obj.toString();
+            return str != null ? str : "";
+        }
+    }
+
     private static boolean arrayEquals(Object o1, Object o2) {
         if (o1 instanceof Object[] && o2 instanceof Object[]) {
             return Arrays.equals((Object[]) ((Object[]) o1), (Object[]) ((Object[]) o2));
@@ -91,8 +124,9 @@ public class ObjectUtils {
         }
     }
 
+
     /**
-     * 给bean的对应字段field进行注入
+     * 对bean的对应字段field进行注入
      *
      * @param fieldName    ：字段名称
      * @param beanClass    ：bean的Class对象
@@ -102,7 +136,6 @@ public class ObjectUtils {
      * @throws Exception
      */
     public static void doInvokeSetMethod(String fieldName, Class<?> beanClass, Class<?> propertyType, Object targetObject, Object value) throws Exception {
-        if (!Assert.isEffectiveString(fieldName)) throw new Exception("字段名必须有效!");
         //得到字段对应的set方法名称
         String methodName = StringUtils.offerSetMethodName(fieldName);
         Method method;
@@ -161,5 +194,4 @@ public class ObjectUtils {
         }
         return resultObject;
     }
-
 }

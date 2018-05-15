@@ -10,11 +10,11 @@ import org.dom4j.io.SAXReader;
 
 import java.util.Map;
 
-public class ResourceTest {
+public class BeanDefinitionTest {
 
     @org.junit.Test
     public void test() throws Exception {
-        String path = this.getClass().getResource("/").getPath() + "aaa.xml";
+        String path = this.getClass().getResource("/").getPath() + "applicationContext.xml";
         Resource resource = new FileSystemResource(path);
         //创建SAXReader对象
         SAXReader reader = new SAXReader();

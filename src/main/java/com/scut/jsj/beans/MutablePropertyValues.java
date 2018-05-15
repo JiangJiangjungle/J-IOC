@@ -1,7 +1,8 @@
 package com.scut.jsj.beans;
 
 
-import org.springframework.util.StringUtils;
+
+import com.scut.jsj.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;

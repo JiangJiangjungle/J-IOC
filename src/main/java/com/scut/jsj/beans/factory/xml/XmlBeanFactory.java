@@ -13,7 +13,7 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
     }
 
     public XmlBeanFactory(Resource resource, BeanFactory parentBeanFactory) throws BeansException {
-        super(parentBeanFactory);
+        super();
         this.reader = new XmlBeanDefinitionReader(this);
         this.reader.loadBeanDefinitions(resource);
     }

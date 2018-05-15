@@ -1,8 +1,8 @@
 package com.scut.jsj.beans.factory.support;
 
+import com.scut.jsj.beans.factory.BeanFactory;
 import com.scut.jsj.beans.factory.ObjectFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
-import com.scut.jsj.beans.factory.config.ConfigurableBeanFactory;
 import com.scut.jsj.exception.*;
 import com.scut.jsj.util.Assert;
 import com.scut.jsj.util.StringUtils;
@@ -10,7 +10,7 @@ import com.scut.jsj.util.StringUtils;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport implements ConfigurableBeanFactory {
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
     private final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
 
     public AbstractBeanFactory() {
@@ -22,12 +22,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
      * @param name
      * @param requiredType
      * @param args
-     * @param typeCheckOnly
      * @param <T>
      * @return
      * @throws BeansException
      */
-    protected <T> T doGetBean(String name, Class<T> requiredType, final Object[] args, boolean typeCheckOnly) throws BeansException {
+    protected <T> T doGetBean(String name, Class<T> requiredType, final Object[] args) throws BeansException {
         //删除name中的&字符，得到真正的beanName
         final String beanName = this.transformedBeanName(name);
         //从缓存中取是否有被创建过的单例类型bean，如果有直接取出并返回
@@ -36,8 +35,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
         if (sharedInstance != null && args == null) {
             bean = this.getObjectForBeanInstance(sharedInstance, name, beanName, null);
         } else {
-            //此处省略了查找能够生成bean的工厂的步骤
-            //查找对应的BeanDefinition
+            //查找对应的RootBeanDefinition
             final RootBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
             //获取依赖项
             String[] dependsOn = mbd.getDependsOn();
@@ -96,19 +94,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     }
 
     public Object getBean(String name) throws BeansException {
-        return this.doGetBean(name, (Class) null, (Object[]) null, false);
+        return this.doGetBean(name, (Class) null, (Object[]) null);
     }
 
     public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-        return this.doGetBean(name, requiredType, (Object[]) null, false);
+        return this.doGetBean(name, requiredType, (Object[]) null);
     }
 
     public Object getBean(String name, Object... args) throws BeansException {
-        return this.doGetBean(name, (Class) null, args, false);
+        return this.doGetBean(name, (Class) null, args);
     }
 
     public <T> T getBean(String name, Class<T> requiredType, Object... args) throws BeansException {
-        return this.doGetBean(name, requiredType, args, false);
+        return this.doGetBean(name, requiredType, args);
     }
 
     /**
@@ -151,7 +149,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     }
 
     /**
-     * 根据beanName得到存在本地factory的BeanDefinition
+     * 根据beanName得到 RootBeanDefinition
      *
      * @param beanName
      * @return
@@ -159,36 +157,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
      */
     protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
         //从mergedBeanDefinitions中获取RootBeanDefinition
-        RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
-        //若为null就从父BeanFactory找（暂不实现）
-        return mbd != null ? mbd : this.getMergedBeanDefinition(beanName, this.getBeanDefinition(beanName));
-    }
-
-    protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd) throws BeanDefinitionStoreException {
-        return this.getMergedBeanDefinition(beanName, bd,null);
-    }
-
-    protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd, BeanDefinition containingBd) throws BeanDefinitionStoreException {
-        synchronized (this.mergedBeanDefinitions) {
-            RootBeanDefinition mbd = null;
-            if (containingBd == null) {
-                mbd = this.mergedBeanDefinitions.get(beanName);
-            }
-            if (mbd == null) {
-                if (bd.getParentName() == null) {
-                    if (bd instanceof RootBeanDefinition) {
-                        mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
-                    } else {
-                        mbd = new RootBeanDefinition(bd);
-                    }
-                }
-                if (containingBd == null) {
-                    this.mergedBeanDefinitions.put(beanName, mbd);
-                }
-            }
-
-            return mbd;
-        }
+        return this.mergedBeanDefinitions.get(beanName);
     }
 
     public void setMergedBeanDefinition(String beanName, RootBeanDefinition beanDefinition) {

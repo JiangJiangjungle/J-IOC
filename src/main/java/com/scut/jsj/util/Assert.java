@@ -1,8 +1,5 @@
 package com.scut.jsj.util;
 
-/**
- * 断言类
- */
 public class Assert {
 
     public static void notNull(Object object, String message) {
