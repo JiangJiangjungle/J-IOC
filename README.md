@@ -21,7 +21,7 @@
 ### BeanDefinition部分
 ![BeanDefinition](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinition%20Diagram.png)
 ### BeanDefinitionReader部分
-![BeanDefinitionReader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinition%20Diagram.png)
+![BeanDefinitionReader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinitionReader%20Diagram.png)
 ### BeanDefinitionRegistry部分
 ![BeanDefinitionReader](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanDefinitionRegistry%20Diagram.png)
 ### BeanFactory部分;
