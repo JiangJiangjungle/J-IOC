@@ -7,8 +7,7 @@ import com.scut.jsj.beans.factory.annotation.Component;
 import com.scut.jsj.beans.factory.annotation.Qualifier;
 import com.scut.jsj.beans.factory.annotation.Scope;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
-import com.scut.jsj.beans.factory.support.AbstractBeanDefinition;
-import com.scut.jsj.beans.factory.support.RootBeanDefinition;
+import com.scut.jsj.beans.factory.support.DefaultBeanDefinition;
 import com.scut.jsj.core.io.Resource;
 import com.scut.jsj.exception.BeanDefinitionStoreException;
 import com.scut.jsj.util.Assert;
@@ -48,34 +47,45 @@ public class XmlParser {
         }
         @SuppressWarnings("unchecked")
         List<Element> beans = root.elements();
-        if (beans == null) {
-            throw new BeanDefinitionStoreException("解析无效的xml文件！");
-        }
         //用于获取bean的名称
         String beanName;
-        AbstractBeanDefinition beanDefinition;
-        for (Element bean : beans) {
-            //若不是<bean>节点
-            if (!bean.getName().equals(BEAN_ELEMENT)) {
-                //检查是否<package-scan>节点
-                if (bean.getName().equals(PACKAGE_SCAN)) {
-                    //扫描包中所有注解bean
-                    attribute = bean.attribute("package_name");
-                    String packageName = attribute.getValue();
-                    scanAndparse(packageName, resource);
-                    continue;
-                } else {
-                    throw new BeanDefinitionStoreException("配置了错误的xml文件节点");
+        DefaultBeanDefinition beanDefinition;
+        //用于缓存需要被扫描的包
+        Set<String> packagesToScan = null;
+        if (beans != null) {
+            for (Element bean : beans) {
+                //若不是<bean>节点
+                if (!bean.getName().equals(BEAN_ELEMENT)) {
+                    //检查是否<package-scan>节点
+                    if (bean.getName().equals(PACKAGE_SCAN)) {
+                        if (packagesToScan == null) {
+                            packagesToScan = new HashSet<>();
+                        }
+                        attribute = bean.attribute("package_name");
+                        //将需要扫描的包名添加到packagesToScan
+                        packagesToScan.add(attribute.getValue());
+                        continue;
+                    } else {
+                        throw new BeanDefinitionStoreException("配置了错误的xml文件节点");
+                    }
                 }
-            }
-            //若<bean>节点中id或class属性为空则配置不正确
-            attribute = bean.attribute("id");
-            Assert.notNull(attribute, "bean节点的id不能为空");
-            beanName = attribute.getValue();
+                //若<bean>节点中id或class属性为空则配置不正确
+                attribute = bean.attribute("id");
+                Assert.notNull(attribute, "bean节点的id不能为空");
+                beanName = attribute.getValue();
 
-            beanDefinition = doParse(bean, beanName, resource);
-            //将解析完成的beanDefinition添加到已解析缓存中
-            beanDefinitions.put(beanName, beanDefinition);
+                beanDefinition = doParse(bean, beanName, resource);
+                //将解析完成的beanDefinition添加到已解析缓存中
+                beanDefinitions.put(beanName, beanDefinition);
+            }
+        } else {
+            throw new BeanDefinitionStoreException("解析无效的xml文件！");
+        }
+        if (packagesToScan != null) {
+            //扫描包中所有注解bean
+            for (String packAgeName : packagesToScan) {
+                scanAndparse(packAgeName, resource);
+            }
         }
         return beanDefinitions;
     }
@@ -88,79 +98,91 @@ public class XmlParser {
      */
     public static void scanAndparse(String packageName, Resource resource) throws BeanDefinitionStoreException {
         String packageLocation = Class.class.getClass().getResource("/").getPath();
-        try {
-            //扫描packageLocation下所有类，并得到类名数组
-            String[] classNames = ClassUtils.getPackageAllClassName(packageLocation, packageName);
-            Class beanClass;
-            //注解类
-            Component component;
-            Autowired autowired;
-            Qualifier qualifier;
-            Scope scope;
-            //beanDefinition
-            AbstractBeanDefinition beanDefinition;
-            //将所有依赖项存入dependSet中
-            Set<String> dependSet = null;
-            //所有基本属性存入propertyValues中
-            MutablePropertyValues propertyValues = null;
-            PropertyValue propertyValue;
-            String propertyName;
-            //类路径
-            String classPath;
+        Class beanClass;
+        //注解类
+        Component component;
+        Autowired autowired;
+        Qualifier qualifier;
+        Scope scope;
+        //beanDefinition
+        DefaultBeanDefinition beanDefinition;
+        //将所有依赖项存入dependSet中
+        Set<String> dependSet = null;
+        //所有基本属性存入propertyValues中
+        MutablePropertyValues propertyValues = null;
+        //属性值
+        PropertyValue propertyValue;
+        //属性名称
+        String propertyName = "";
+        //bean名称
+        String beanName = "";
+        //被依赖的bean名称
+        String dependentBeanName;
+        //扫描packageLocation下所有类，并得到类名数组
+        String[] classNames = ClassUtils.getPackageAllClassName(packageLocation, packageName);
+        //类路径
+        String classPath;
+        if (classNames != null) {
             for (String className : classNames) {
                 classPath = packageName + "." + className;
-                beanClass = Class.forName(classPath);
-                component = (Component) beanClass.getAnnotation(Component.class);
-                if (component != null) {
-                    //存在@Component注解的类，进行解析
-                    beanDefinition = new RootBeanDefinition();
-                    //确定beanName
-                    String beanName = component.value().equals("") ? StringUtils.getAlias(beanClass.getSimpleName()) : component.value();
-                    scope = (Scope) beanClass.getAnnotation(Scope.class);
-                    //设置scope，若没有设置就默认为单例
-                    if (scope != null) {
-                        beanDefinition.setScope(scope.value());
-                    }
-                    //设定对应的Resource对象
-                    beanDefinition.setResource(resource);
-                    //保存bean的Class对象
-                    beanDefinition.setBeanClass(beanClass);
-                    //添加description
-                    beanDefinition.setDescription(beanName + ":" + beanClass.getName());
-                    Field[] fields = beanClass.getDeclaredFields();
-                    if (fields != null) {
-                        for (Field field : fields) {
-                            autowired = field.getAnnotation(Autowired.class);
-                            //若存在依赖，则添加依赖项
-                            if (autowired != null) {
-                                if (dependSet == null) {
-                                    dependSet = new HashSet<>(16);
+                try {
+                    beanClass = Class.forName(classPath);
+                    component = (Component) beanClass.getAnnotation(Component.class);
+                    if (component != null) {
+                        //存在@Component注解的类，进行解析
+                        beanDefinition = new DefaultBeanDefinition();
+                        //确定beanName
+                        beanName = component.value().equals("") ? StringUtils.getAlias(beanClass.getSimpleName()) : component.value();
+                        scope = (Scope) beanClass.getAnnotation(Scope.class);
+                        //设置scope，若没有设置就默认为单例
+                        if (scope != null) {
+                            beanDefinition.setScope(scope.value());
+                        }
+                        //设定对应的Resource对象
+                        beanDefinition.setResource(resource);
+                        //保存bean的Class对象
+                        beanDefinition.setBeanClass(beanClass);
+                        //添加description
+                        beanDefinition.setDescription(beanName + ":" + beanClass.getName());
+                        Field[] fields = beanClass.getDeclaredFields();
+                        if (fields != null) {
+                            for (Field field : fields) {
+                                autowired = field.getAnnotation(Autowired.class);
+                                //若存在依赖，则添加依赖项
+                                if (autowired != null) {
+                                    if (dependSet == null) {
+                                        dependSet = new HashSet<>(16);
+                                    }
+                                    dependentBeanName = autowired.value().equals("") ? StringUtils.getAlias(field.getType().getSimpleName()) : autowired.value();
+                                    dependSet.add(field.getName() + ";" + dependentBeanName);
                                 }
-                                dependSet.add(field.getName() + ";" + autowired.value());
-                            }
-                            qualifier = field.getAnnotation(Qualifier.class);
-                            if (qualifier != null) {
-                                if (propertyValues == null) {
-                                    propertyValues = new MutablePropertyValues();
+                                qualifier = field.getAnnotation(Qualifier.class);
+                                if (qualifier != null) {
+                                    if (propertyValues == null) {
+                                        propertyValues = new MutablePropertyValues();
+                                    }
+                                    propertyName = field.getName();
+                                    propertyValue = new PropertyValue(propertyName, ObjectUtils.instantiateProperty(beanClass, propertyName, qualifier.value()));
+                                    //将属性存入propertyValues
+                                    propertyValues.addPropertyValue(propertyValue);
                                 }
-                                propertyName = field.getName();
-                                propertyValue = new PropertyValue(propertyName, ObjectUtils.instantiateProperty(beanClass, propertyName, qualifier.value()));
-                                //将属性存入propertyValues
-                                propertyValues.addPropertyValue(propertyValue);
                             }
                         }
+                        //添加依赖项
+                        beanDefinition.setDependsOn(StringUtils.toStringArray(dependSet));
+                        //添加属性项
+                        beanDefinition.setPropertyValues(propertyValues);
+                        beanDefinitions.put(beanName, beanDefinition);
                     }
-                    //添加依赖项
-                    beanDefinition.setDependsOn(StringUtils.toStringArray(dependSet));
-                    //添加属性项
-                    beanDefinition.setPropertyValues(propertyValues);
-                    beanDefinitions.put(beanName, beanDefinition);
+                } catch (ClassNotFoundException c) {
+                    throw new BeanDefinitionStoreException("找不到对应的Class对象: " + classPath);
+                } catch (Exception e) {
+                    throw new BeanDefinitionStoreException("实例化对应的字段属性:  " + beanName + "." + propertyName + " 时出错");
                 }
             }
-        } catch (Exception n) {
-            throw new BeanDefinitionStoreException("扫描包：" + packageName + "时，没有发现class文件");
         }
     }
+
 
     /**
      * 解析一个bean节点,返回对应的BeanDefinition
@@ -170,11 +192,11 @@ public class XmlParser {
      * @param resource
      * @return
      */
-    private static AbstractBeanDefinition doParse(Element bean, String beanName, Resource resource) throws BeanDefinitionStoreException {
+    private static DefaultBeanDefinition doParse(Element bean, String beanName, Resource resource) throws BeanDefinitionStoreException {
         Attribute attribute = bean.attribute("class");
         Assert.notNull(attribute, "bean节点的class不能为空");
         String classPath = attribute.getValue();
-        AbstractBeanDefinition beanDefinition;
+        DefaultBeanDefinition beanDefinition;
         //用于获取bean的作用域scope
         String scope;
         //用于获取bean的Class对象
@@ -185,7 +207,7 @@ public class XmlParser {
             //根据类路径构建bean对应的Class对象
             beanClass = Class.forName(classPath);
             // 保存最初的对象
-            beanDefinition = new RootBeanDefinition();
+            beanDefinition = new DefaultBeanDefinition();
             //设置scope，若没有设置就默认为单例
             if ((attribute = bean.attribute("scope")) != null) {
                 scope = attribute.getValue();
@@ -193,6 +215,7 @@ public class XmlParser {
                     beanDefinition.setScope(scope);
                 }
             }
+
             //设定对应的Resource对象
             beanDefinition.setResource(resource);
             //保存bean的Class对象

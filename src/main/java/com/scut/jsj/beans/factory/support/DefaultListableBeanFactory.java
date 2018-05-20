@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2018-4-23
  * 这是BeanFactory的最终默认实现类,另外实现了BeanDefinitionRegistry接口，将BeanFactory与BeanDefinitionReader彻底连接了起来
  */
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements BeanDefinitionRegistry, Serializable {
+public class DefaultListableBeanFactory extends AbstractBeanFactory implements BeanDefinitionRegistry, Serializable {
     //用于缓存所有的beanDefinition
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
     //用于缓存所有的beanDefinition对应的name
@@ -55,9 +55,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             this.beanDefinitionNames.add(beanName);
         }
         beanDefinition = this.beanDefinitionMap.get(beanName);
-        //若是RootBeanDefinition则同时存到AbstractBeanFactory的mergedBeanDefinition中去
-        if (beanDefinition instanceof RootBeanDefinition) {
-            this.setMergedBeanDefinition(beanName, (RootBeanDefinition) beanDefinition);
+        //若是DefaultBeanDefinition则同时存到AbstractBeanFactory的mergedBeanDefinition中去
+        if (beanDefinition instanceof DefaultBeanDefinition) {
+            this.setMergedBeanDefinition(beanName, (DefaultBeanDefinition) beanDefinition);
         }
     }
 
@@ -84,6 +84,23 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
     @Override
+    public String[] getBeanDefinitionNames() {
+        return StringUtils.toStringArray(this.beanDefinitionNames);
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return this.beanDefinitionMap.size();
+    }
+
+    /**
+     * 实现了BeanFactory的getBeanDefinition方法
+     *
+     * @param beanName
+     * @return
+     * @throws BeansException
+     */
+    @Override
     public BeanDefinition getBeanDefinition(String beanName) throws BeansException {
         BeanDefinition bd = this.beanDefinitionMap.get(beanName);
         if (bd == null) {
@@ -94,16 +111,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         } else {
             return bd;
         }
-    }
-
-    @Override
-    public String[] getBeanDefinitionNames() {
-        return StringUtils.toStringArray(this.beanDefinitionNames);
-    }
-
-    @Override
-    public int getBeanDefinitionCount() {
-        return this.beanDefinitionMap.size();
     }
 
 }

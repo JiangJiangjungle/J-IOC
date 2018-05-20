@@ -1,23 +1,31 @@
 package com.scut.jsj.beans.factory.support;
 
+import com.scut.jsj.beans.PropertyValue;
+import com.scut.jsj.beans.PropertyValues;
 import com.scut.jsj.beans.factory.BeanFactory;
 import com.scut.jsj.beans.factory.ObjectFactory;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
-import com.scut.jsj.exception.*;
+import com.scut.jsj.exception.BeanCreationException;
+import com.scut.jsj.exception.BeanNotOfRequiredTypeException;
+import com.scut.jsj.exception.BeansException;
+import com.scut.jsj.exception.NoSuchBeanDefinitionException;
 import com.scut.jsj.util.Assert;
+import com.scut.jsj.util.ObjectUtils;
 import com.scut.jsj.util.StringUtils;
 
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
-    private final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
+    //缓存所有的DefaultBeanDefinition
+    private final Map<String, DefaultBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
 
     public AbstractBeanFactory() {
     }
 
     /**
-     * AbstractBeanFactory中最重要的方法，即bean的真正获取方法步骤
+     * AbstractBeanFactory中最重要的方法，即bean的详细获取步骤
      *
      * @param name
      * @param requiredType
@@ -33,10 +41,10 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         Object sharedInstance = this.getSingleton(name);
         Object bean;
         if (sharedInstance != null && args == null) {
-            bean = this.getObjectForBeanInstance(sharedInstance, name, beanName, null);
+            bean = sharedInstance;
         } else {
-            //查找对应的RootBeanDefinition
-            final RootBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
+            //查找对应的DefaultBeanDefinition
+            final DefaultBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
             //获取依赖项
             String[] dependsOn = mbd.getDependsOn();
             String[] var11;
@@ -75,14 +83,14 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                     }
                 });
                 //进行检查
-                bean = this.getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
+                bean = sharedInstance;
             } else {
                 //若是多例则创建新的bean
                 Object prototypeInstance;
                 //创建多例的bean
                 prototypeInstance = this.createBean(beanName, mbd, args);
                 //进行检查
-                bean = this.getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
+                bean = prototypeInstance;
             }
         }
         //若有需要则进行类型检查,类型不符合则抛出异常（简化）
@@ -118,25 +126,6 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         this.mergedBeanDefinitions.remove(beanName);
     }
 
-
-    /**
-     * 若需要判断需要得到的bean是否FactoryBean类型：
-     * 1.是，且name以&开头（不以&开头则从FactoryBean的getObjectFromFactoryBean()方法中得到真正的bean）就返回该factoryBean；
-     * 2.否，且name不以&开头，直接返回bean（因为已经是需要的bean）。
-     * 3.对于bean既不是FactoryBean类型，name又以&开头的情况，抛出异常（不符合规范）
-     * <p>
-     * 暂时不实现以上功能，以后完善
-     *
-     * @param sharedInstance
-     * @param name
-     * @param beanName
-     * @param rootBeanDefinition
-     * @return
-     */
-    protected Object getObjectForBeanInstance(Object sharedInstance, String name, String beanName, RootBeanDefinition rootBeanDefinition) {
-        return sharedInstance;
-    }
-
     /**
      * 得到真正的beanName而不是factoryBean的name
      *
@@ -149,26 +138,176 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
     /**
-     * 根据beanName得到 RootBeanDefinition
+     * 根据beanName得到 DefaultBeanDefinition
      *
      * @param beanName
      * @return
      * @throws BeansException
      */
-    protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
-        //从mergedBeanDefinitions中获取RootBeanDefinition
+    protected DefaultBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
+        //从mergedBeanDefinitions中获取DefaultBeanDefinition
         return this.mergedBeanDefinitions.get(beanName);
     }
 
-    public void setMergedBeanDefinition(String beanName, RootBeanDefinition beanDefinition) {
+    public void setMergedBeanDefinition(String beanName, DefaultBeanDefinition beanDefinition) {
         mergedBeanDefinitions.put(beanName, beanDefinition);
     }
 
-    //交给子类实现
-    protected abstract Object createBean(String var1, RootBeanDefinition var2, Object[] var3) throws BeanCreationException;
 
-    //交给子类实现
-    protected abstract BeanDefinition getBeanDefinition(String beanName) throws BeansException;
+    /**
+     * createBean的实现方法，调用到此方法时，目标bean的所有依赖项已经全部创建完成
+     *
+     * @param beanName
+     * @param mbd
+     * @param args
+     * @return
+     * @throws BeanCreationException
+     */
+    protected Object createBean(String beanName, DefaultBeanDefinition mbd, Object[] args) throws BeanCreationException {
+        if (this.logger.isDebugEnabled()) {
+            this.logger.debug("Creating instance of bean '" + beanName + "'");
+        }
+        Object beanInstance;
+        //又将创建过程委派给了doCreateBean()方法
+        beanInstance = this.doCreateBean(beanName, mbd, args);
+        if (this.logger.isDebugEnabled()) {
+            this.logger.debug("Finished creating instance of bean '" + beanName + "'");
+        }
+        return beanInstance;
+    }
+
+    /**
+     * 真正实现创建bean的方法
+     *
+     * @param beanName
+     * @param mbd
+     * @param args
+     * @return
+     * @throws BeanCreationException
+     */
+    protected Object doCreateBean(final String beanName, final DefaultBeanDefinition mbd, Object[] args) throws BeanCreationException {
+        //创建一个bean默认构造实例
+        Object exposedObject = this.createBeanInstance(beanName, mbd, args);
+        try {
+            //此处对bean进行依赖注入
+            this.populateBean(beanName, mbd, exposedObject);
+            if (exposedObject != null) {
+                exposedObject = this.initializeBean(beanName, exposedObject, mbd);
+            }
+        } catch (Throwable var18) {
+            throw new BeanCreationException(mbd.getDescription(), beanName, "Initialization of bean failed", var18);
+        }
+        try {
+            //若是单例对象，将对象存入单例池
+            if (mbd.isSingleton()) {
+                this.addSingleton(beanName, exposedObject);
+            }
+            return exposedObject;
+        } catch (Exception var16) {
+            throw new BeanCreationException(mbd.getDescription(), beanName, "Invalid destruction signature", var16);
+        }
+    }
+
+    /**
+     * 对bean的基本属性的赋值
+     *
+     * @param beanName
+     * @param exposedObject
+     * @param mbd
+     * @return
+     */
+    private Object initializeBean(String beanName, Object exposedObject, DefaultBeanDefinition mbd) throws BeansException {
+        PropertyValues propertyValues = mbd.getPropertyValues();
+        //获得bean对应的class对象
+        Class<?> beanClass = mbd.getBeanClass();
+        //属性名称
+        String propertyName;
+        //属性值
+        Object value;
+        //属性类型
+        Class<?> propertyType;
+        for (PropertyValue propertyValue : propertyValues.getPropertyValues()) {
+            propertyName = propertyValue.getName();
+            value = propertyValue.getValue();
+            propertyType = value.getClass();
+            try {
+                ObjectUtils.doInvokeSetMethod(propertyName, beanClass, propertyType, exposedObject, value);
+            } catch (Exception e) {
+                throw new BeansException(beanName + mbd.getResourceDescription() + ": 利用反射调用set方法进行基本属性依赖注入时失败");
+            }
+        }
+        return exposedObject;
+    }
+
+
+    /**
+     * 成对bean的引用依赖注入（利用set方法实现）
+     *
+     * @param beanName
+     * @param mbd
+     * @param beanObject
+     * @throws BeansException
+     */
+    private void populateBean(String beanName, DefaultBeanDefinition mbd, Object beanObject) throws BeansException {
+        String[] dependencies = mbd.getDependsOn();
+        Class<?> beanClass = mbd.getBeanClass();
+        //依赖项名称
+        String dependentName;
+        //依赖项实体
+        Object depentObect;
+        //bean的字段名
+        String fieldName;
+        String[] var;
+        if (dependencies != null) {
+            for (String dependOn : dependencies) {
+                var = dependOn.split(";");
+                fieldName = var[0];
+                dependentName = var[1];
+                //依赖项的实例
+                depentObect = this.getBean(dependentName);
+                try {
+                    // 调用set方法完成注入
+                    ObjectUtils.doInvokeSetMethod(fieldName, beanClass, depentObect.getClass(), beanObject, depentObect);
+                } catch (Exception e) {
+                    throw new BeansException(beanName + mbd.getResourceDescription() + ": 利用反射调用set方法进行引用依赖注入时失败");
+                }
+            }
+        }
+        if (this.logger.isDebugEnabled()) {
+            this.logger.debug("完成 '" + beanName + "' 的依赖注入");
+        }
+    }
+
+    /**
+     * 创建bean的默认构造实例
+     *
+     * @param beanName
+     * @param mbd
+     * @param args
+     * @return
+     * @throws BeanCreationException
+     */
+    protected Object createBeanInstance(String beanName, DefaultBeanDefinition mbd, Object[] args) throws BeanCreationException {
+        // 确认需要创建Bean实例的类可以实例化(简化)
+        Class<?> beanClass = mbd.getBeanClass();
+        Assert.notNull(beanClass, "beanClass实例化对象时不允许为null！");
+        //若beanClass私有，则抛出异常；否则调用instantiateBean()方法实例化bean
+        if (!Modifier.isPublic(beanClass.getModifiers())) {
+            throw new BeanCreationException(mbd.getResourceDescription(), beanName, "Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
+        } else {
+            try {
+                //返回一个bean的默认构造实例
+                return beanClass.newInstance();
+            } catch (Exception e) {
+                throw new BeanCreationException(mbd.getResourceDescription(), beanName, "反射机制出错，实例化bean失败" + beanClass.getName());
+            }
+        }
+    }
+
+    @Override
+    public boolean containsBean(String name) {
+        return true;
+    }
 
     @Override
     public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
@@ -178,7 +317,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             return true;
         } else {
             try {
-                RootBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
+                DefaultBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
                 return mbd.isSingleton();
             } catch (BeansException e) {
                 return false;
@@ -200,7 +339,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             return beanInstance.getClass();
         } else {
             try {
-                RootBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
+                DefaultBeanDefinition mbd = this.getMergedLocalBeanDefinition(beanName);
                 return mbd.getClass();
             } catch (BeansException e) {
                 throw new NoSuchBeanDefinitionException("找不到bean的类型！");
@@ -208,8 +347,6 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         }
     }
 
-    @Override
-    public boolean containsBean(String name) {
-        return true;
-    }
+    //交给子类实现
+    protected abstract BeanDefinition getBeanDefinition(String beanName) throws BeansException;
 }

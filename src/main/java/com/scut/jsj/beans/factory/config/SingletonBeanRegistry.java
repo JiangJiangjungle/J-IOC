@@ -1,7 +1,7 @@
 package com.scut.jsj.beans.factory.config;
 
 /**
- * 补充了对单例bean的相关操作
+ * 用于对单例bean的注册和保存，因此定义了该接口
  */
 public interface SingletonBeanRegistry {
     //将单例bean对象存入单例池（专门存放单例bean的一个容器）

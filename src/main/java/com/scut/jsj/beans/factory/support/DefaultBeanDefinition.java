@@ -1,19 +1,16 @@
 package com.scut.jsj.beans.factory.support;
 
 import com.scut.jsj.beans.MutablePropertyValues;
-import com.scut.jsj.core.io.Resource;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
+import com.scut.jsj.core.io.Resource;
 import com.scut.jsj.util.ObjectUtils;
 
 import java.util.Arrays;
 
-
 /**
- * @author jsj
- * @since 2018-4-10
- * BeanDefinition接口的模板实现（抽象）类
+ * root(直接继承于Object类的)bean的实现类，继承了AbstractBeanDefinition抽象类
  */
-public abstract class AbstractBeanDefinition implements BeanDefinition {
+public class DefaultBeanDefinition implements BeanDefinition {
     //bean的作用域
     private String scope = BeanDefinition.SCOPE_SINGLETON;
     //该bean的class对象
@@ -29,14 +26,22 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
     //工厂名称
     private String factoryBeanName;
 
-    protected AbstractBeanDefinition() {
+    public DefaultBeanDefinition() {
         super();
     }
 
-    public AbstractBeanDefinition(BeanDefinition original) {
+    private DefaultBeanDefinition(DefaultBeanDefinition original) {
         this.setScope(original.getScope());
-        this.setFactoryBeanName(original.getFactoryBeanName());
+        this.setBeanClass((Class<?>) original.beanClass);
+        this.setDependsOn(original.dependsOn);
+        this.setDescription(original.description);
+        this.setResource(original.resource);
         this.setPropertyValues(new MutablePropertyValues(original.getPropertyValues()));
+        this.setFactoryBeanName(original.getFactoryBeanName());
+    }
+
+    public DefaultBeanDefinition cloneBeanDefinition() {
+        return new DefaultBeanDefinition(this);
     }
 
     /**
@@ -87,10 +92,10 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
     public boolean equals(Object other) {
         if (this == other) {
             return true;
-        } else if (!(other instanceof AbstractBeanDefinition)) {
+        } else if (!(other instanceof DefaultBeanDefinition)) {
             return false;
         } else {
-            AbstractBeanDefinition that = (AbstractBeanDefinition) other;
+            DefaultBeanDefinition that = (DefaultBeanDefinition) other;
             if (!ObjectUtils.nullSafeEquals(this.getBeanClassName(), that.getBeanClassName())) {
                 return false;
             } else if (!ObjectUtils.nullSafeEquals(this.scope, that.scope)) {

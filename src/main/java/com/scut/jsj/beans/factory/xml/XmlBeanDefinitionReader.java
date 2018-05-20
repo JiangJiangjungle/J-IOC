@@ -1,10 +1,9 @@
 package com.scut.jsj.beans.factory.xml;
 
+import com.scut.jsj.beans.factory.config.BeanDefinition;
 import com.scut.jsj.beans.factory.support.AbstractBeanDefinitionReader;
 import com.scut.jsj.beans.factory.support.BeanDefinitionRegistry;
-import com.scut.jsj.beans.factory.xml.XmlParser;
 import com.scut.jsj.core.io.Resource;
-import com.scut.jsj.beans.factory.config.BeanDefinition;
 import com.scut.jsj.exception.BeanDefinitionStoreException;
 import com.scut.jsj.util.Assert;
 import org.apache.commons.logging.Log;
@@ -13,13 +12,13 @@ import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author jsj
  * @since 2018-4-11
  * BeanDefinitionReader的真正实现类，继承了AbstractBeanDefinitionReader抽象类
  */
+
 public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
     protected final Log logger = LogFactory.getLog(this.getClass());
 

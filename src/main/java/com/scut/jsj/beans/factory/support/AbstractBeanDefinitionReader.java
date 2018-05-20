@@ -9,7 +9,7 @@ import com.scut.jsj.util.Assert;
 /**
  * @author jsj
  * @since 2018-4-11
- * BeanDefinitionReader的模板实现（抽象）类
+ * BeanDefinitionReader的抽象模板类
  */
 public abstract class AbstractBeanDefinitionReader implements BeanDefinitionReader {
     private final BeanDefinitionRegistry registry;

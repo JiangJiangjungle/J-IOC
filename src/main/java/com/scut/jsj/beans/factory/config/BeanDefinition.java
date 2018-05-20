@@ -25,11 +25,6 @@ public interface BeanDefinition {
 
     void setBeanClassName(String beanClassName);
 
-    //获得父类的类名
-    String getParentName();
-
-    void setParentName(String parentName);
-
     void setScope(String scope);
 
     String getScope();

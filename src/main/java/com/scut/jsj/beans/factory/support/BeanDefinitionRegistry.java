@@ -4,7 +4,7 @@ import com.scut.jsj.exception.BeanDefinitionStoreException;
 import com.scut.jsj.beans.factory.config.BeanDefinition;
 
 /**
- * 作为一个BeanDefinition的注册表，本接口定义了注册方法和注销方法
+ * 作为一个BeanDefinition的注册表，本接口定义了注册、注销等相关方法
  */
 public interface BeanDefinitionRegistry {
 

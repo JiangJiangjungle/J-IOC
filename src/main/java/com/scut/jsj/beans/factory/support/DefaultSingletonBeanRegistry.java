@@ -12,11 +12,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 默认的实现SingletonBeanRegistry接口的类，同时（继承类SimpleAliasRegistry，暂不实现）
+ * 默认的实现SingletonBeanRegistry接口的类，同时
  */
 public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     protected static final Object NULL_OBJECT = new Object();
     protected final Log logger = LogFactory.getLog(this.getClass());
+    //单例池,缓存所有已经创建完成的单例bean
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap(256);
     //用于缓存已经注册的单例bean名称
     private final Set<String> registeredSingletons = new LinkedHashSet(256);
@@ -277,4 +278,6 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     public int getSingletonCount() {
         return this.singletonObjects.size();
     }
+
+
 }

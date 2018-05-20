@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Component
 public class SuperMan extends Teacher {
 
-    @Autowired("person")
+    @Autowired
     private Person person;
 
     @Qualifier("jsj")
