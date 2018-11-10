@@ -1,6 +1,6 @@
 # springIOCImpl
 
-- 全面基于**spring**框架实现的简易版**IOC容器**;
+- 参考**Spring**框架实现的简易版**IOC容器**;
 - 实现了基于**xml文件配置**的bean依赖注入和管理;
 - 实现了基于**注解配置**的功能，增加了@Autowired,@Component,@Qualifier和@Scope四个注解;
 
