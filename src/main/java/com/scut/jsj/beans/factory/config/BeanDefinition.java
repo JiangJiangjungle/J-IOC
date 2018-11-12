@@ -12,9 +12,7 @@ import com.scut.jsj.beans.PropertyValues;
  * 的name
  */
 public interface BeanDefinition {
-    //单例
     String SCOPE_SINGLETON = "singleton";
-    //多例
     String SCOPE_PROTOTYPE = "prototype";
 
     //获得所依赖的bean的类名数组

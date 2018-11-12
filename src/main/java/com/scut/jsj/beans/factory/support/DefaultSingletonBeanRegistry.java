@@ -17,13 +17,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     protected static final Object NULL_OBJECT = new Object();
     protected final Log logger = LogFactory.getLog(this.getClass());
-    //单例池,缓存所有已经创建完成的单例bean
-    private final Map<String, Object> singletonObjects = new ConcurrentHashMap(256);
-    //用于缓存已经注册的单例bean名称
-    private final Set<String> registeredSingletons = new LinkedHashSet(256);
-    //记录的是依赖项所服务的所有dependentBean
-    private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap(64);
-    //记录的是dependentBean以及其所需要的依赖项
+    /**
+     * 单例池,缓存所有已经创建完成的单例bean
+     */
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+    /**
+     * 用于缓存已经注册的单例bean名称
+     */
+    private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
+    /**
+     * 记录的是依赖项所服务的所有dependentBean
+     */
+    private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
+    /**
+     * 记录的是dependentBean以及其所需要的依赖项
+     */
     private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
 
     public DefaultSingletonBeanRegistry() {
@@ -37,23 +45,20 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
      */
     public void registerDependentBean(String beanName, String dependentBeanName) {
         //获得依赖项beanName所服务的所有bean
-        Set<String> dependentBeans = (Set) this.dependentBeanMap.get(beanName);
+        Set<String> dependentBeans = this.dependentBeanMap.get(beanName);
         synchronized (this.dependentBeanMap) {
             if (dependentBeans == null || !dependentBeans.contains(dependentBeanName)) {
                 if (dependentBeans == null) {
                     dependentBeans = new LinkedHashSet(8);
                     this.dependentBeanMap.put(beanName, dependentBeans);
                 }
-                ((Set) dependentBeans).add(dependentBeanName);
+                dependentBeans.add(dependentBeanName);
             }
         }
         synchronized (this.dependenciesForBeanMap) {
-            Set<String> dependenciesForBean = (Set) this.dependenciesForBeanMap.get(dependentBeanName);
-            if (dependenciesForBean == null) {
-                dependenciesForBean = new LinkedHashSet(8);
-                this.dependenciesForBeanMap.put(dependentBeanName, dependenciesForBean);
-            }
-            ((Set) dependenciesForBean).add(beanName);
+            Set<String> dependenciesForBean = this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName,
+                    k -> new LinkedHashSet(8));
+            dependenciesForBean.add(beanName);
         }
     }
 
@@ -87,7 +92,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
      * @param beanName
      */
     protected void destroyBean(String beanName) {
-        Set<String> dependencies = (Set) this.dependentBeanMap.remove(beanName);
+        Set<String> dependencies = this.dependentBeanMap.remove(beanName);
         //销毁该bean作为依赖项所服务的其他所有bean的记录
         if (dependencies != null) {
             if (this.logger.isDebugEnabled()) {

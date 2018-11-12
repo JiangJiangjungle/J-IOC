@@ -39,10 +39,11 @@ public class XmlParser {
      * @return
      */
     public static Map<String, BeanDefinition> parser(Document document, Resource resource) throws BeanDefinitionStoreException {
-        Element root = document.getRootElement();// 获得根节点
+        // 获得根节点
+        Element root = document.getRootElement();
         //判断是否为使用spring的bean规则的xml文件
         Attribute attribute = root.attribute("xmlnamespace");
-        if (!attribute.getValue().equals("spring/schma/beans")) {
+        if (!"spring/schma/beans".equals(attribute.getValue())) {
             throw new BeanDefinitionStoreException("不是使用spring-bean规则的xml文件");
         }
         @SuppressWarnings("unchecked")
