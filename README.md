@@ -4,15 +4,12 @@
 - 实现了基于**xml文件配置**的bean依赖注入和管理;
 - 实现了基于**注解配置**的功能，增加了@Autowired,@Component,@Qualifier和@Scope四个注解;
 
--------------------
-
-
-## IDE
+# IDE
 
 > IntelliJ IDEA
 
 
-## 类图
+# 类图
 
 ### Resource部分
 ![Resource](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/Resource%20Diagram.png)
@@ -27,15 +24,10 @@
 ### BeanFactory部分;
 ![BeanFactory](https://github.com/JiangJiangjungle/springIOCImpl/blob/master/figure/BeanFactory%20Diagram.png)
 
-## 下一步改进
+# 下一步改进
 
 - 简化项目结构
 - 增加AOP实现
-
-## 链接
-- 博客：[JSJ姜姜姜](https://blog.csdn.net/jsj13263690918)
-
----------
 
 
 
