@@ -1,4 +1,4 @@
-# My-SpringIOC
+# J-IOC
 
 - 参考**Spring**框架实现的简易版**IOC容器**;
 - 实现了基于**xml文件配置**的bean依赖注入和管理;
